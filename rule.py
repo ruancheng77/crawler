@@ -9,15 +9,7 @@ class Rule(object):
     PARSER_REQUESTS = "requests"
 
     FEATURES_HTML = "html.parser"
-    
-    NAME_ID = "id"
-    NAME_XPATH = "xpath"
-    NAME_LINK_TEXT = "link text"
-    NAME_PARTIAL_LINK_TEXT = "partial link text"
-    NAME_NAME = "name"
-    NAME_TAG_NAME = "tag name"
-    NAME_CLASS_NAME = "class name"
-    NAME_CSS_SELECTOR = "css selector"
+    FEATURES_JSON = "json.parser"
 
     REQUEST_METHOD_GET = "get"
     REQUEST_METHOD_POST = "post"
@@ -33,9 +25,8 @@ class Rule(object):
         - :name(String):    dom 节点名称
         - :attrs(Dict):     dom 节点属性值
         - :all(Boolean):    True: 查找所有，False：查找第一个
-        - :data(Dict):      
-            >- attrs(List): 
-            从当前 dom 节点获取需要的数据, 格式如下：\n 
+        - :data(Dict):
+            >- attrs(List): 从当前 dom 节点获取需要的数据, 格式如下：\n 
         {"name": "链接", "value": "href"} \n
         当 value 等于 text 或者 string 时，表示获取当前 dom 节点的文本。
         当 value 等于 dom 节点属性的时候，表示获取当前 dom 节点的属性值。
@@ -51,5 +42,6 @@ class Rule(object):
         return d
 
 if __name__ == '__main__':
-    Rule.create("div", {"class": "middle-column-home"}, Rule.TYPE_SINGLE)
+    rule = Rule.create("div", {"class": "middle-column-home"}, data={"attrs": [{"name": "name", "value": "href"}]})
+    print(rule)
     

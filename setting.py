@@ -87,3 +87,45 @@ config = {
         )
     ]
 }
+
+# 配置解析 JSON 数据示例
+# config = {
+#     "parser": Rule.PARSER_REQUESTS,
+#     "features": Rule.FEATURES_JSON,
+#     "site_name": "测试POST",
+#     "site_url": "http://localhost:9090/api/user/1",
+#     "method": Rule.REQUEST_METHOD_POST,
+#     "rules": [
+#         Rule.create(
+#             data={
+#                 "attrs": [
+#                     {
+#                         "name": "响应状态", 
+#                         "value": "status"
+#                     },
+#                     {
+#                         "name": "响应消息", 
+#                         "value": "msg"
+#                     },
+#                     {
+#                         "name": "响应时间戳", 
+#                         "value": "timestamp"
+#                     },
+#                     {
+#                         "name": "响应结果", 
+#                         "value": "result", 
+#                         "attrs": [
+#                             {
+#                                 "name": "响应数据", 
+#                                 "value": "data", 
+#                                 "attrs":[
+#                                     {"name": "主键", "value": "id"}
+#                                 ]
+#                             }
+#                         ]
+#                     }
+#                 ]
+#             }
+#         )
+#     ]
+# }

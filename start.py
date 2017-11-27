@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding=utf-8 -*-
 
+import json
 import os
 
 from bs4 import BeautifulSoup
@@ -37,17 +38,18 @@ class Crawler(object):
         self.rules = rules
 
     def run(self):
+        '执行方法'
         parser = self.get_parser()
-        page_source = parser()
-        self.resolve_page_source(page_source)
+        source = self.resolve_source(parser())
+        self.handler_source(source)
     
     def get_parser(self):
+        '获取对应的解析方法'
         return self.__getattribute__("by_" + self.parser)
 
-    def get_soup(self, page_source):
-        return BeautifulSoup(page_source, self.features)
 
     def by_selenium(self):
+        '使用 selenium 获取数据'
         from selenium import webdriver
         try:
             driver = webdriver.Firefox(
@@ -61,6 +63,7 @@ class Crawler(object):
                 driver.close()
 
     def by_requests(self):
+        '使用 requests 获取数据'
         import requests
         try:
             response = requests.request(method=self.method, url=self.site_url)
@@ -71,7 +74,30 @@ class Crawler(object):
         finally:
             pass
 
-    def handler_rules(self, source, rules, parent=None):
+    def resolve_source(self, source):
+        '解析数据源'
+        if self.features == Rule.FEATURES_HTML:
+            return BeautifulSoup(source, self.features)
+        elif self.features == Rule.FEATURES_JSON:
+            return json.loads(source)
+    
+    def handler_source(self, source):
+        '处理数据源'
+        if self.features == Rule.FEATURES_HTML:
+            self.handler_html(source)
+        elif self.features == Rule.FEATURES_JSON:
+            self.handler_json(source)
+    
+    def handler_html(self, source):
+        '处理 html 页面资源'
+        self.handler_html_rules(source, self.rules)
+
+    def handler_json(self, source):
+        '处理 json 数据'
+        self.handler_json_rules(source, self.rules)
+
+    def handler_html_rules(self, source, rules, parent=None):
+        '处理 html 类型规则'
         source = parent or source
         for rule in rules:
             if rule.get("all") == False:
@@ -79,43 +105,67 @@ class Crawler(object):
             elif rule.get("all") == True:
                 self.handler_rule_multi(source, rule)
 
+    def handler_json_rules(self, source, rules):
+        '处理 json 类型规则'
+        for rule in rules:
+            self.resolve_data(source, rule)
+
     def handler_rule_single(self, source, rule, parent=None):
+        '处理单对象规则'
         source = parent or source
         tag = source.find(name=rule["name"], attrs=rule["attrs"])
         if tag:
             if rule.get("data"):
-                self.resolve_data(tag, rule.get("data"))
+                self.resolve_data(tag, rule)
             if rule.get("rules"):
-                self.handler_rules(source, rule.get("rules"), tag)
+                self.handler_html_rules(source, rule.get("rules"), tag)
     
     def handler_rule_multi(self, source, rule, parent=None):
+        '处理多对象规则'
         source = parent or source
         tags = source.find_all(name=rule.get("name"), attrs=rule.get("attrs"))
         if tags:
             if rule.get("data"):
                 for tag in tags:
-                    self.resolve_data(tag, rule.get("data"))
+                    self.resolve_data(tag, rule)
                     if rule.get("rules"):
-                        self.handler_rules(source, rule.get("rules"), tag)
+                        self.handler_html_rules(source, rule.get("rules"), tag)
             else:
                 if rule.get("rules"):
                     for tag in tags:
-                        self.handler_rules(source, rule.get("rules"), tag)
+                        self.handler_html_rules(source, rule.get("rules"), tag)
 
-    def resolve_page_source(self, page_source):
-        soup = self.get_soup(page_source)
-        self.handler_rules(soup, self.rules)
+    def resolve_data(self, source, rule):
+        '解析数据'
+        data = rule.get("data")
+        if data:
+            if self.features == Rule.FEATURES_HTML:
+                if data.get("attrs"):
+                    self.resolve_html_attrs(source, data.get("attrs"))
+            elif self.features == Rule.FEATURES_JSON:
+                if data.get("attrs"):
+                    self.resolve_json_attrs(source, data.get("attrs"))
+    
+    def resolve_html_attrs(self, source, attrs):
+        '解析 html 属性'
+        for attr in attrs:
+            name = attr.get("name")
+            value = attr.get("value")
+            if value == "text" or value == "string":
+                value = source.__getattribute__(value)
+            else:
+                value = source.get(value)
+            print("%s >>> %s"%(name, value))
 
-    def resolve_data(self, tag, data):
-        content = {}
-        if data.get("attrs"):
-            for attr in data.get("attrs"):
-                name = attr.get("name")
-                value = attr.get("value")
-                if value == "text" or value == "string":
-                    value = tag.__getattribute__(value)
-                else:
-                    value = tag.get(value)
+    def resolve_json_attrs(self, source, attrs):
+        '解析 json 属性'
+        for attr in attrs:
+            name = attr.get("name")
+            value = attr.get("value")
+            value = source.get(value)
+            if attr.get("attrs"):
+                self.resolve_attrs(value, attr.get("attrs"))
+            else:
                 print("%s >>> %s"%(name, value))
 
 if __name__ == "__main__":

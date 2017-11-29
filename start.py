@@ -50,7 +50,11 @@ class Crawler(object):
 
     def by_selenium(self):
         '使用 selenium 获取数据'
-        from selenium import webdriver
+        try:
+            from selenium import webdriver
+        except Exception as e:
+            print(e)
+            return
         try:
             driver = webdriver.Firefox(
                 executable_path=setting.firefox_path, log_path=setting.log_path)
@@ -64,7 +68,11 @@ class Crawler(object):
 
     def by_requests(self):
         '使用 requests 获取数据'
-        import requests
+        try:
+            import requests
+        except Exception as e:
+            print(e)
+            return
         try:
             response = requests.request(method=self.method, url=self.site_url)
             page_source = response.content.decode()
@@ -141,13 +149,14 @@ class Crawler(object):
         if data:
             if self.features == Rule.FEATURES_HTML:
                 if data.get("attrs"):
-                    self.resolve_html_attrs(source, data.get("attrs"))
+                    self.resolve_html_attrs(source, data)
             elif self.features == Rule.FEATURES_JSON:
                 if data.get("attrs"):
-                    self.resolve_json_attrs(source, data.get("attrs"))
+                    self.resolve_json_attrs(source, data)
     
-    def resolve_html_attrs(self, source, attrs):
+    def resolve_html_attrs(self, source, data):
         '解析 html 属性'
+        attrs = data.get("attrs")
         for attr in attrs:
             name = attr.get("name")
             value = attr.get("value")
@@ -155,18 +164,29 @@ class Crawler(object):
                 value = source.__getattribute__(value)
             else:
                 value = source.get(value)
-            print("%s >>> %s"%(name, value))
+            # print(name, value)
+            if data.get("file"):
+                self.save_data_file(data.get("file"), name, value)
 
-    def resolve_json_attrs(self, source, attrs):
+    def resolve_json_attrs(self, source, data):
         '解析 json 属性'
+        attrs = data.get("attrs")
         for attr in attrs:
             name = attr.get("name")
             value = attr.get("value")
             value = source.get(value)
             if attr.get("attrs"):
-                self.resolve_attrs(value, attr.get("attrs"))
+                self.resolve_json_attrs(value, attr)
             else:
                 print("%s >>> %s"%(name, value))
+
+    def save_data_file(self, fp, name, value):
+        fd = os.path.dirname(fp)
+        if not os.path.exists(fd):
+            setting.mkdir(fd)
+        with open(fp, "a") as f:
+            json.dump({"name": name, "value": value}, f)
+            f.write("\n")
 
 if __name__ == "__main__":
     crawler = Crawler(**setting.config)

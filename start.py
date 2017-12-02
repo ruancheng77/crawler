@@ -18,14 +18,7 @@ class Crawler(object):
     - :method: 请求方法("GET", "POST", "HEAD", "OPTIONS", "PUT", "DELETE")
     - :rending: 是否需要渲染
     - :rules: 爬取所需信息的规则
-      >>>  ID = "id"
-      >>>  XPATH = "xpath"
-      >>>  LINK_TEXT = "link text"
-      >>>  PARTIAL_LINK_TEXT = "partial link text"
-      >>>  NAME = "name"
-      >>>  TAG_NAME = "tag name"
-      >>>  CLASS_NAME = "class name"
-      >>>  CSS_SELECTOR = "css selector"
+      >>>  目前采用 BeautifulSoup 的 find 方法执行规则查询。
     '''
 
     def __init__(self, parser=None, features=None, site_name=None, site_url=None, method=None, rules=None,

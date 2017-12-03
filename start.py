@@ -2,13 +2,18 @@
 # -*- coding=utf-8 -*-
 
 import json
+import logging
 import os
 
 from bs4 import BeautifulSoup
-
 import setting
 from rule import Rule
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    datefmt='%Y-%m-%d %H:%M:%S',
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
 
 class Crawler(object):
     '''
@@ -40,13 +45,12 @@ class Crawler(object):
         '获取对应的解析方法'
         return self.__getattribute__("by_" + self.parser)
 
-
     def by_selenium(self):
         '使用 selenium 获取数据'
         try:
             from selenium import webdriver
         except Exception as e:
-            print(e)
+            logging.error(e)
             return
         try:
             driver = webdriver.Firefox(
@@ -54,7 +58,7 @@ class Crawler(object):
             driver.get(self.site_url)
             return driver.page_source
         except Exception as e:
-            print("Error >>> ", e)
+            logging.error("Error >>> ", e)
         finally:
             if driver:
                 driver.close()
@@ -64,14 +68,14 @@ class Crawler(object):
         try:
             import requests
         except Exception as e:
-            print(e)
+            logging.error(e)
             return
         try:
             response = requests.request(method=self.method, url=self.site_url)
             page_source = response.content.decode()
             return page_source
         except Exception as e:
-            print("Error >>> ", e)
+            logging.error("Error >>> ", e)
         finally:
             pass
 
@@ -157,7 +161,7 @@ class Crawler(object):
                 value = source.__getattribute__(value)
             else:
                 value = source.get(value)
-            # print(name, value)
+            logging.debug({"name": name, "value": value})
             if data.get("file"):
                 self.save_data_file(data.get("file"), name, value)
 
@@ -168,10 +172,11 @@ class Crawler(object):
             name = attr.get("name")
             value = attr.get("value")
             value = source.get(value)
+            logging.debug({"name": name, "value": value})
             if attr.get("attrs"):
                 self.resolve_json_attrs(value, attr)
-            else:
-                print("%s >>> %s"%(name, value))
+            if data.get("file"):
+                self.save_data_file(data.get("file"), name, value)
 
     def save_data_file(self, fp, name, value):
         fd = os.path.dirname(fp)

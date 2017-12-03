@@ -1,4 +1,2 @@
-
-home/log/geckodriver.log
-*.pyc
-*.pyc
+__pycache__/
+*.py[cod]
